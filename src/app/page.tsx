@@ -1,103 +1,126 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectCategory, setCategory } from '../lib/redux/slices/categorySlice';
+import {
+  fetchCategories,
+  fetchTopStories,
+  fetchEditorPicks,
+  fetchFeaturedStories,
+  fetchCategoryStories,
+} from '../lib/api';
+import Navbar from '@/components/Navbar';
+import CategoryNav from '../components/CategoryNav';
+import StoryCard from '../components/StoryCard';
+import SearchBar from '../components/SearchBar';
+import SkeletonLoader from '../components/SkeletonLoader';
+import { Story } from '../types';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [searchTerm, setSearchTerm] = useState('');
+  const selectedCategory = useSelector(selectCategory);
+  const dispatch = useDispatch();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useQuery({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
+  });
+
+  const { data: topStories = [], isLoading: topStoriesLoading, error: topStoriesError } = useQuery({
+    queryKey: ['topStories'],
+    queryFn: fetchTopStories,
+  });
+
+  const { data: editorPicks = [], isLoading: editorPicksLoading, error: editorPicksError } = useQuery({
+    queryKey: ['editorPicks'],
+    queryFn: fetchEditorPicks,
+  });
+
+  const { data: featuredStories = [], isLoading: featuredStoriesLoading, error: featuredStoriesError } = useQuery({
+    queryKey: ['featuredStories'],
+    queryFn: fetchFeaturedStories,
+  });
+
+  const { data: categoryStories = [], isLoading: categoryStoriesLoading, error: categoryStoriesError } = useQuery({
+    queryKey: ['categoryStories', selectedCategory],
+    queryFn: () => selectedCategory ? fetchCategoryStories(selectedCategory) : Promise.resolve([]),
+    enabled: !!selectedCategory,
+  });
+
+  const filteredStories = (stories: Story[]): Story[] => {
+    if (!Array.isArray(stories)) return [];
+    return stories.filter((story) =>
+      (story.headline )?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
+  useEffect(() => {
+    console.log('Top Stories:', topStories);
+  }, [topStories]);
+
+  const renderStorySection = (title: string, stories: Story[], loading: boolean, error: any) => (
+    <section className="my-12">
+      <h2 className="text-2xl font-bold text-primary mb-4">{title}</h2>
+      {loading ? (
+        <SkeletonLoader type="card" count={3} />
+      ) : error ? (
+        <div className="text-red-500 text-center">Error loading {title.toLowerCase()}: {error.message}</div>
+      ) : filteredStories(stories).length === 0 ? (
+        <div className="text-gray-500 dark:text-gray-400 text-center">No {title.toLowerCase()} available</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredStories(stories).map((story) => (
+            <StoryCard key={story.storyId} story={story} />
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
+    </section>
+  );
+
+  return (
+   
+    <div className="">
+      <Navbar />
+      <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+
+      {categoriesLoading ? (
+        <SkeletonLoader type="category" />
+      ) : categoriesError ? (
+        <div className="text-red-500 text-center">Error loading categories: {categoriesError.message}</div>
+      ) : categories.length === 0 ? (
+        <div className="text-gray-500 dark:text-gray-400 text-center py-4">No categories available</div>
+      ) : (
+        <CategoryNav
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={(id) => dispatch(setCategory(id))}
+        />
+      )}
+
+      {selectedCategory && (
+        <section className="my-12">
+          <h2 className="text-2xl font-bold text-primary mb-4">Category Stories</h2>
+          {categoryStoriesLoading ? (
+            <SkeletonLoader type="card" count={3} />
+          ) : categoryStoriesError ? (
+            <div className="text-red-500 text-center">Error loading category stories: {categoryStoriesError.message}</div>
+          ) : filteredStories(categoryStories).length === 0 ? (
+            <div className="text-gray-500 dark:text-gray-400 text-center">No stories available for this category</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredStories(categoryStories).map((story) => (
+                <StoryCard key={story.storyId} story={story} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {renderStorySection('Top Stories', topStories, topStoriesLoading, topStoriesError)}
+      {renderStorySection("Editor's Picks", editorPicks, editorPicksLoading, editorPicksError)}
+      {renderStorySection('Featured Stories', featuredStories, featuredStoriesLoading, featuredStoriesError)}
     </div>
   );
 }
