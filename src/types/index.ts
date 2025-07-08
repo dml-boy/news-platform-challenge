@@ -6,12 +6,19 @@ export interface Category {
   updated_at?: string;
 }
 
+export interface EditorsPickData {
+  main: Story;
+  more: string[];
+}
+
 
 export interface Story {
-  // id: string;           // Previously "storyId"
+  id: string;           // Previously "storyId"
   storyId: string;        // Previously "id"
   headline: string;       // Previously "title"
   description: string;
   content: string;
   image: string;
+  categoryId: number;   // Optional, if not always present
+  
 }

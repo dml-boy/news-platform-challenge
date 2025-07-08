@@ -1,126 +1,132 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useSelector, useDispatch } from 'react-redux';
-import { selectCategory, setCategory } from '../lib/redux/slices/categorySlice';
 import {
-  fetchCategories,
   fetchTopStories,
-  fetchEditorPicks,
-  fetchFeaturedStories,
-  fetchCategoryStories,
-} from '../lib/api';
+  fetchCategories,
+  fetchLatestStories,
+  fetchEditorPicks, // ✅ import
+} from '@/lib/api';
+
+import FeaturedGrid from '@/components/FeaturedGrid';
+import TopStories from '@/components/TopStories';
+import LatestNews from '@/components/LatestNews';
+import EditorsPick from '@/components/EditorsPick'; // ✅ import the component
+
 import Navbar from '@/components/Navbar';
-import CategoryNav from '../components/CategoryNav';
-import StoryCard from '../components/StoryCard';
-import SearchBar from '../components/SearchBar';
-import SkeletonLoader from '../components/SkeletonLoader';
-import { Story } from '../types';
+import Hero from '@/components/Hero';
+import BottomNav from '@/components/BottomNav';
+import Head from 'next/head';
+import { Story, Category, EditorsPickData } from '@/types'; // ✅ import type
+
+const keywords = ['news', 'update', 'report', 'story', 'article', 'headline'];
 
 export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
-  const selectedCategory = useSelector(selectCategory);
-  const dispatch = useDispatch();
 
-  const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useQuery({
-    queryKey: ['categories'],
-    queryFn: fetchCategories,
-  });
-
-  const { data: topStories = [], isLoading: topStoriesLoading, error: topStoriesError } = useQuery({
+  const {
+    data: topStories = [],
+    isLoading: topLoading,
+    error: topError,
+  } = useQuery({
     queryKey: ['topStories'],
     queryFn: fetchTopStories,
   });
 
-  const { data: editorPicks = [], isLoading: editorPicksLoading, error: editorPicksError } = useQuery({
-    queryKey: ['editorPicks'],
+  const {
+    data: latestStories = [],
+    isLoading: latestLoading,
+    error: latestError,
+  } = useQuery({
+    queryKey: ['latestStories'],
+    queryFn: fetchLatestStories,
+  });
+
+  const {
+    data: categories = [],
+    isLoading: catLoading,
+    error: catError,
+  } = useQuery({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
+  });
+
+  const {
+    data: editorsPick,
+    isLoading: editorsLoading,
+    error: editorsError,
+  } = useQuery<EditorsPickData>({
+    queryKey: ['editorsPick'],
     queryFn: fetchEditorPicks,
   });
 
-  const { data: featuredStories = [], isLoading: featuredStoriesLoading, error: featuredStoriesError } = useQuery({
-    queryKey: ['featuredStories'],
-    queryFn: fetchFeaturedStories,
-  });
+  const filteredTop = useMemo(() => {
+    return searchTerm
+      ? topStories.filter(
+          (story) =>
+            story.headline.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            story.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            keywords.some((keyword) =>
+              story.headline.toLowerCase().includes(keyword.toLowerCase()) ||
+              story.description.toLowerCase().includes(keyword.toLowerCase())
+            )
+        )
+      : topStories;
+  }, [topStories, searchTerm]);
 
-  const { data: categoryStories = [], isLoading: categoryStoriesLoading, error: categoryStoriesError } = useQuery({
-    queryKey: ['categoryStories', selectedCategory],
-    queryFn: () => selectedCategory ? fetchCategoryStories(selectedCategory) : Promise.resolve([]),
-    enabled: !!selectedCategory,
-  });
+  const topData = filteredTop.slice(0, 3);
+  const featuredData = filteredTop
+    .filter((s) => !topData.some((t) => t.storyId === s.storyId))
+    .slice(0, 4);
 
-  const filteredStories = (stories: Story[]): Story[] => {
-    if (!Array.isArray(stories)) return [];
-    return stories.filter((story) =>
-      (story.headline )?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  };
+  const latestData = useMemo(() => {
+    return latestStories
+      .filter(
+        (s) =>
+          !topData.some((t) => t.storyId === s.storyId) &&
+          !featuredData.some((f) => f.storyId === s.storyId)
+      )
+      .slice(0, 8);
+  }, [latestStories, topData, featuredData]);
 
   useEffect(() => {
-    console.log('Top Stories:', topStories);
-  }, [topStories]);
+    console.log('🧪 Debug:', {
+      top: topData,
+      featured: featuredData,
+      latest: latestData,
+    });
+  }, [topData, featuredData, latestData]);
 
-  const renderStorySection = (title: string, stories: Story[], loading: boolean, error: any) => (
-    <section className="my-12">
-      <h2 className="text-2xl font-bold text-primary mb-4">{title}</h2>
-      {loading ? (
-        <SkeletonLoader type="card" count={3} />
-      ) : error ? (
-        <div className="text-red-500 text-center">Error loading {title.toLowerCase()}: {error.message}</div>
-      ) : filteredStories(stories).length === 0 ? (
-        <div className="text-gray-500 dark:text-gray-400 text-center">No {title.toLowerCase()} available</div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredStories(stories).map((story) => (
-            <StoryCard key={story.storyId} story={story} />
-          ))}
-        </div>
-      )}
-    </section>
-  );
+  if (topLoading || latestLoading || catLoading || editorsLoading) {
+    return <p className="text-center text-gray-600">Loading...</p>;
+  }
+
+  if (topError || latestError || catError || editorsError) {
+    return <p className="text-center text-red-600">Error loading data.</p>;
+  }
 
   return (
-   
-    <div className="">
+    <div className="min-h-screen bg-gray-100 dark:bg-white">
+      <Head>
+        <meta name="keywords" content={keywords.join(', ')} />
+        <title>News Platform</title>
+      </Head>
+
       <Navbar />
-      <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+      <Hero />
+      <BottomNav searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
-      {categoriesLoading ? (
-        <SkeletonLoader type="category" />
-      ) : categoriesError ? (
-        <div className="text-red-500 text-center">Error loading categories: {categoriesError.message}</div>
-      ) : categories.length === 0 ? (
-        <div className="text-gray-500 dark:text-gray-400 text-center py-4">No categories available</div>
-      ) : (
-        <CategoryNav
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={(id) => dispatch(setCategory(id))}
-        />
-      )}
+      <main className="max-w-7xl mx-auto">
+        {/* ✅ Inject Editor's Pick */}
+    
 
-      {selectedCategory && (
-        <section className="my-12">
-          <h2 className="text-2xl font-bold text-primary mb-4">Category Stories</h2>
-          {categoryStoriesLoading ? (
-            <SkeletonLoader type="card" count={3} />
-          ) : categoryStoriesError ? (
-            <div className="text-red-500 text-center">Error loading category stories: {categoryStoriesError.message}</div>
-          ) : filteredStories(categoryStories).length === 0 ? (
-            <div className="text-gray-500 dark:text-gray-400 text-center">No stories available for this category</div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredStories(categoryStories).map((story) => (
-                <StoryCard key={story.storyId} story={story} />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
 
-      {renderStorySection('Top Stories', topStories, topStoriesLoading, topStoriesError)}
-      {renderStorySection("Editor's Picks", editorPicks, editorPicksLoading, editorPicksError)}
-      {renderStorySection('Featured Stories', featuredStories, featuredStoriesLoading, featuredStoriesError)}
+        <TopStories stories={topData} />
+        <FeaturedGrid stories={featuredData} />
+        <LatestNews stories={latestData} categories={categories} />
+          {editorsPick && <EditorsPick data={editorsPick} />}
+      </main>
     </div>
   );
 }
