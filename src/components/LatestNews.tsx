@@ -11,11 +11,12 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
 interface Props {
-  stories: Story[];
-  categories: Category[];
+    stories: Story[], 
+  categories: Category[], 
+  hideCategoryFilter?: boolean
 }
 
-const LatestNewsCarousel: React.FC<Props> = ({ stories, categories }) => {
+const LatestNewsCarousel: React.FC<Props> = ({ stories, categories, hideCategoryFilter }) => {
          if (!stories || stories.length === 0) {
   console.log('🛑 LatestNewsCarousel: No stories received');
   return <p className="text-center text-gray-500">No latest news available.</p>;

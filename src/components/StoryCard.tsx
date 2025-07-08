@@ -1,44 +1,29 @@
+// components/StoryCard.tsx
+import { Story } from '@/types';
+import Link from 'next/link';
 
-// // src/components/StoryCard.tsx
-// 'use client';
+interface StoryCardProps {
+  story: Story;
+}
 
-// import Link from 'next/link';
-// import { useDispatch, useSelector } from 'react-redux';
-// import { addBookmark, removeBookmark, selectBookmarks } from '../lib/redux/slices/bookmarksSlice';
-// import { Story } from '../types';
+const StoryCard: React.FC<StoryCardProps> = ({ story }) => {
+  return (
+    <Link href={`/stories/${story.storyId}`}>
+      <article className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+        <div className="h-48 relative">
+          <img 
+            src={story.image || '/placeholder.jpg'} 
+            alt={story.headline}
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div className="p-4">
+          <h3 className="font-semibold text-lg mb-2 line-clamp-2">{story.headline}</h3>
+          <p className="text-gray-600 text-sm line-clamp-3">{story.description}</p>
+        </div>
+      </article>
+    </Link>
+  );
+};
 
-// interface StoryCardProps {
-//   story: Story;
-// }
-
-// export default function StoryCard({ story }: StoryCardProps) {
-//   const dispatch = useDispatch();
-//   const bookmarks = useSelector(selectBookmarks);
-//   const isBookmarked = bookmarks.includes(story.storyId);
-
-//   const handleBookmark = () => {
-//     if (isBookmarked) {
-//       dispatch(removeBookmark(story.storyId));
-//     } else {
-//       dispatch(addBookmark(story.storyId));
-//     }
-//   };
-
-//   return (
-//     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
-//       <Link href={`/stories/${story.storyId}`} className="block">
-//         <img src={story.image} alt={story.headline} className="w-full h-48 object-cover rounded mb-2" />
-//         <h3 className="text-lg font-semibold">{story.headline}</h3>
-//         <p className="text-gray-600 dark:text-gray-300">{story.description}</p>
-//       </Link>
-//       <button
-//         onClick={handleBookmark}
-//         className={`mt-2 px-3 py-1 rounded ${
-//           isBookmarked ? 'bg-red-500' : 'bg-blue-500'
-//         } text-white`}
-//       >
-//         {isBookmarked ? 'Remove Bookmark' : 'Bookmark'}
-//       </button>
-//     </div>
-//   );
-// }
+export default StoryCard;

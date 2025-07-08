@@ -2,63 +2,62 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { useQuery } from '@tanstack/react-query';
-import { fetchEditorPicks } from '@/lib/api';
-import { EditorsPickData } from '@/types';
-                  interface Props {
-                  data: EditorsPickData;
-                  }
+import Link from 'next/link';
+import { Story } from '@/types';
 
-const EditorsPick: React.FC<Props> = ({ data: initialData }) => {
-  const { main: mainStory, more: moreStories } = initialData;
-  const { data, isLoading, error } = useQuery<EditorsPickData>({
-    queryKey: ['editorsPick'],
-    queryFn: fetchEditorPicks,
-  });
+interface Props {
+  stories: Story[];
+}
 
-  if (isLoading) {
-    return <p className="text-center text-gray-600">Loading Editor's Pick...</p>;
-  }
+const EditorsPick: React.FC<Props> = ({ stories }) => {
+  if (!stories || stories.length === 0) return null;
 
-  if (error || !data) {
-    return <p className="text-center text-red-600">Failed to load Editor's Pick.</p>;
-  }
-
-  
+  const fullStory = stories[0];
+  const sidebarStories = stories.slice(1, 5); // Take next 4 stories
 
   return (
-    <section className="flex flex-col lg:flex-row gap-6 p-4 bg-white border border-blue-300 animate-fade-in-up">
-      {/* Main Story */}
-      <div className="w-full lg:w-2/3">
-        <div className="relative">
-          <Image
-            src={mainStory.image || '/placeholder.jpg'}
-            alt={mainStory.headline}
-            width={800}
-            height={500}
-            className="w-full h-64 object-cover"
-          />
-          <span className="absolute top-2 left-2 bg-pink-500 text-white text-xs font-bold px-2 py-1 rounded">
-            Editor's Pick
-          </span>
-        </div>
-        <div className="p-4">
-          <h2 className="text-xl font-bold text-gray-900">{mainStory.headline}</h2>
-          {/* <p className="text-gray-600 mt-1 text-sm">{mainStory.subtext}</p> */}
-          {/* <p className="text-gray-500 text-xs mt-2">@{mainStory.author}</p> */}
-        </div>
-      </div>
+    <section className="my-12">
+      <h2 className="text-3xl font-bold text-center text-pink-700 mb-6">Editor's Picks</h2>
 
-      {/* More Stories Sidebar */}
-      <div className="w-full lg:w-1/3 bg-gray-50 p-4 rounded">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">MORE STORIES</h3>
-        <ul className="space-y-2">
-          {moreStories.map((story, index) => (
-            <li key={index} className="text-gray-700 text-sm list-disc list-inside">
-              {story}
-            </li>
-          ))}
-        </ul>
+      <div className="mx-auto max-w-7xl px-4 flex flex-col md:flex-row gap-8">
+        {/* Main Story */}
+        <div className="w-full md:w-2/3">
+          <Link href={`/stories/${fullStory.storyId}`}>
+            <article className="rounded-xl bg-white shadow-md hover:shadow-lg overflow-hidden transition">
+              <Image
+                src={fullStory.image || '/default-image.jpg'}  // Added fallback image
+                alt={fullStory.headline}
+                width={800}
+                height={400}
+                className="w-full h-[400px] object-cover"
+              />
+              <div className="p-6">
+                <h3 className="text-2xl font-bold text-gray-800">{fullStory.headline}</h3>
+                <p className="text-gray-600 text-base mt-4 line-clamp-4">{fullStory.description}</p>
+              </div>
+            </article>
+          </Link>
+        </div>
+
+        {/* Sidebar Headlines */}
+        <div className="w-full md:w-1/3">
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold text-pink-700 mb-4">MORE STORIES</h3>
+
+            {sidebarStories.map((story) => (
+              <Link key={story.storyId} href={`/stories/${story.storyId}`}>
+                <article className="flex items-start space-x-4 p-2 hover:bg-gray-100 rounded">
+                  <div className="w-2 h-2 mt-2 bg-red-500 rounded-full"></div>
+                  <div>
+                    <h4 className="text-md font-medium text-gray-800">
+                      {story.headline}
+                    </h4>
+                  </div>
+                </article>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

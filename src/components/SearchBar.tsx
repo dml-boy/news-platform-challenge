@@ -17,7 +17,7 @@ export default function SearchBar({ searchTerm, setSearchTerm }: SearchBarProps)
         type="text"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        placeholder="Search stories by title..."
+        ="Search stories by title..."
         className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
       />
     </div>

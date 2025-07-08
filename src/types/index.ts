@@ -6,19 +6,19 @@ export interface Category {
   updated_at?: string;
 }
 
-export interface EditorsPickData {
-  main: Story;
-  more: string[];
-}
 
 
+// types/index.d.ts
 export interface Story {
-  id: string;           // Previously "storyId"
-  storyId: string;        // Previously "id"
-  headline: string;       // Previously "title"
+  id: string;
+  storyId: string;
+  headline: string;
   description: string;
   content: string;
   image: string;
-  categoryId: number;   // Optional, if not always present
-  
+  categoryId: number;
+  author?: string;
+  postedTime?: string;
+  isFeatured?: boolean;
+  slug?: string;
 }
