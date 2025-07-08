@@ -18,7 +18,7 @@ export default function CategorySection({
   stories,
   categoryId,
   isLoading = false,
-  featuredKeywords = []
+//   featuredKeywords = []
 }: CategorySectionProps) {
   if (isLoading) {
     return (
