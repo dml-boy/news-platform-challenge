@@ -26,7 +26,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
 import SearchResults from '@/components/SearchResults';
 import Head from 'next/head';
-import Link from 'next/link';
+// import Link from 'next/link';
 
 const keywords = ['news', 'update', 'report', 'story', 'article', 'headline'];
 
